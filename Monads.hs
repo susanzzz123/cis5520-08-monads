@@ -1,6 +1,7 @@
 {-
 ---
 fulltitle: The Maybe and List Monads
+date: October 24, 2022
 ---
 -}
 
@@ -324,9 +325,9 @@ So we can rewrite the example to use the monadic functions!
 zipTree4 :: Tree a -> Tree b -> Maybe (Tree (a, b))
 zipTree4 (Leaf a) (Leaf b) = return (Leaf (a, b))
 zipTree4 (Branch l r) (Branch l' r') =
-  zipTree3 l l'
+  zipTree4 l l'
     >>= ( \x ->
-            zipTree3 r r'
+            zipTree4 r r'
               >>= ( \y ->
                       return (Branch x y)
                   )

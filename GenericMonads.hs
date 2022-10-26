@@ -1,6 +1,7 @@
 {-
 ---
 fulltitle: "In class exercise: General Monadic Functions"
+date: October 26, 2022
 ---
 -}
 

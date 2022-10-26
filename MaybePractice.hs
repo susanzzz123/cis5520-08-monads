@@ -1,6 +1,7 @@
 {-
 ---
 fulltitle: "In class exercise: Practice with Maybe Monad"
+date: October 26, 2022
 ---
 
 The goal of this short in-class exercise is to get a bit more practice with using the `Maybe` Monad.
