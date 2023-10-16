@@ -1,7 +1,7 @@
 {-
 ---
 fulltitle: "In class exercise: General Monadic Functions"
-date: October 26, 2022
+date:
 ---
 -}
 
@@ -27,8 +27,8 @@ figure out the implementation, even if you don't quite know what the function sh
 
 For that reason you should also test *each* of these functions with at least two unit test
 cases, one using the `Maybe` monad, and one using the `List` monad.  After you
-you have tried the function out, try to describe in words what each operation does for that specific
-monad.
+you have tried the function out, try to describe in words what each operation does
+for that specific monad.
 
 Here is the first one as an example.
 -}
@@ -118,9 +118,9 @@ General Applicative Functions
 
 Which of these functions above can you equivalently rewrite using `Applicative`?
 i.e. for which of the definitions below, can you replace `undefined` with
-a definition that *only* uses members of the `Applicative` type class.
-(Again, do not use functions from `Control.Applicative`, `Data.Foldable` or
-`Data.Traversable` in your solution.)
+a definition that *only* uses members of the `Applicative` (and `Functor`)
+type class. (Again, do not use functions from `Control.Applicative`,
+`Data.Foldable` or `Data.Traversable` in your solution.)
 
 If you provide a definition, you should write test cases that demonstrate that it
 has the same behavior on `List` and `Maybe` as the monadic versions above.
@@ -132,7 +132,7 @@ has the same behavior on `List` and `Maybe` as the monadic versions above.
 mapA :: Applicative f => (a -> f b) -> [a] -> f [b]
 mapA = undefined
 
-foldA :: Applicative f => (a -> b -> f a) -> a -> [b] -> f a
+foldA :: forall f a b. Applicative f => (a -> b -> f a) -> a -> [b] -> f a
 foldA = undefined
 
 sequenceA :: Applicative f => [f a] -> f [a]

@@ -1,7 +1,7 @@
 {-
 ---
 fulltitle: The Maybe and List Monads
-date: October 24, 2022
+date: October 23, 2023
 ---
 -}
 
@@ -25,10 +25,8 @@ data Tree a = Leaf a | Branch (Tree a) (Tree a)
 {-
 Define the following function that combines together the data stored
 in the tree.
-
 -}
 
--- | zip two trees together
 zipTree :: Tree a -> Tree b -> Tree (a, b)
 zipTree = undefined
 
@@ -48,7 +46,6 @@ testZip0 =
     == Branch (Leaf ("a", 0)) (Branch (Leaf ("b", 1)) (Leaf ("c", 2)))
 
 -- >>> zipTree (Branch (Leaf "a") (Branch (Leaf "b") (Leaf "c"))) (Branch (Leaf 0) (Branch (Leaf 1) (Leaf 2)))
--- Branch (Leaf ("a",0)) (Branch (Leaf ("b",1)) (Leaf ("c",2)))
 
 {-
 Keeping track of errors
@@ -130,17 +127,18 @@ It's not terribly beautiful.
 -}
 
 zipTree2 :: Tree a -> Tree b -> Maybe (Tree (a, b))
-zipTree2 (Leaf a) (Leaf b) = Just (Leaf (a, b))
-zipTree2 (Branch l r) (Branch l' r') =
-  case zipTree2 l l' of
-    Nothing -> Nothing
-    Just x -> case zipTree2 r r' of
-      Nothing -> Nothing
-      Just y -> Just (Branch x y)
-zipTree2 _ _ = Nothing
+zipTree2 = go
+  where
+    go (Leaf a) (Leaf b) = Just (Leaf (a, b))
+    go (Branch l r) (Branch l' r') =
+      case go l l' of
+        Nothing -> Nothing
+        Just x -> case go r r' of
+          Nothing -> Nothing
+          Just y -> Just (Branch x y)
+    go _ _ = Nothing
 
 -- >>> testZip zipTree2
--- True
 
 {-
 All that nested pattern matching! This version looks so much worse than the
@@ -167,15 +165,16 @@ Looking closely for patterns
    marked `(*)` below.
 
 ~~~~~~~~~{.haskell}
-       zipTree2 :: Tree a -> Tree b -> Maybe (Tree (a,b))
-       zipTree2 (Leaf a)     (Leaf b)       = Just (Leaf (a,b))     (*)
-       zipTree2 (Branch l r) (Branch l' r') =
-         case zipTree2 l l' of
-           Nothing -> Nothing
-           Just x  -> case zipTree2 r r' of
-                         Nothing -> Nothing
-                         Just y  -> Just (Branch x y)               (*)
-       zipTree2 _            _              = Nothing
+      zipTree2 :: Tree a -> Tree b -> Maybe (Tree (a,b))
+      zipTree2 = go where
+        go (Leaf a)     (Leaf b)       = Just (Leaf (a,b))         (*)
+        go (Branch l r) (Branch l' r') =
+          case go l l' of
+            Nothing -> Nothing
+            Just x  -> case go r r' of
+                   Nothing -> Nothing
+                   Just y  -> Just (Branch x y)                    (*)
+        go _            _              = Nothing
 ~~~~~~~~~~
 
   In both cases we have a successful answer and we mark this success
@@ -200,26 +199,27 @@ retrn = Just
   parts marked `(*)` below.
 
 ~~~~~~~~~{.haskell}
-       zipTree2 :: Tree a -> Tree b -> Maybe (Tree (a,b))
-       zipTree2 (Leaf a)     (Leaf b)       = Just (Leaf (a,b))
-       zipTree2 (Branch l r) (Branch l' r') =
-         case zipTree2 l l' of   <------------------------ (*)
-           Nothing -> Nothing
-           Just x  -> case zipTree2 r r' of  <------------ (*)
-                         Nothing -> Nothing
-                         Just y  -> Just (Branch x y)
-       zipTree2 _            _              = Nothing
+      zipTree2 :: Tree a -> Tree b -> Maybe (Tree (a,b))
+      zipTree2 = go where
+        go (Leaf a)     (Leaf b)       = Just (Leaf (a,b))
+        go (Branch l r) (Branch l' r') =
+          case go l l' of   <----------------------------- (*)
+            Nothing -> Nothing
+            Just x  -> case go r r' of   <---------------- (*)
+                   Nothing -> Nothing
+                   Just y  -> Just (Branch x y)
+        go _            _              = Nothing
 ~~~~~~~~~~~
 
   i.e. the two parts of the code we are focusing are look
   like this
 
-     case zipTree l l' of
+     case go l l' of
        Nothing -> Nothing
        Just x -> ...
            do something with x
 
-     case zipTree r r' of
+     case go r r' of
        Nothing -> Nothing
        Just y -> ...
           do something with y
@@ -256,19 +256,21 @@ bind x f = case x of
 
 With these two new functions (`retrn` and `bind`) we can refactor the code.
 Let's rewrite `zipTree` using them in place of `Just` and explicit case analysis.
+
 -}
 
 zipTree3 :: Tree a -> Tree b -> Maybe (Tree (a, b))
-zipTree3 (Leaf a) (Leaf b) = retrn (Leaf (a, b))
-zipTree3 (Branch l r) (Branch l' r') =
-  zipTree3 l l'
-    `bind` ( \x ->
-               zipTree3 r r' `bind` \y -> retrn (Branch x y)
-           )
-zipTree3 _ _ = Nothing
+zipTree3 = go
+  where
+    go (Leaf a) (Leaf b) = retrn (Leaf (a, b))
+    go (Branch l r) (Branch l' r') =
+      go l l'
+        `bind` ( \x ->
+                   go r r' `bind` (\y -> retrn (Branch x y))
+               )
+    go _ _ = Nothing
 
 -- >>> testZip zipTree3
--- True
 
 {-
 Do the names `retrn` and `bind` sound familiar to you? Do their types look
@@ -323,16 +325,15 @@ So we can rewrite the example to use the monadic functions!
 -}
 
 zipTree4 :: Tree a -> Tree b -> Maybe (Tree (a, b))
-zipTree4 (Leaf a) (Leaf b) = return (Leaf (a, b))
-zipTree4 (Branch l r) (Branch l' r') =
-  zipTree4 l l'
-    >>= ( \x ->
-            zipTree4 r r'
-              >>= ( \y ->
-                      return (Branch x y)
-                  )
-        )
-zipTree4 _ _ = Nothing
+zipTree4 = go
+  where
+    go (Leaf a) (Leaf b) = return (Leaf (a, b))
+    go (Branch l r) (Branch l' r') =
+      go l l'
+        >>= ( \x ->
+                go r r' >>= (\y -> return (Branch x y))
+            )
+    go _ _ = Nothing
 
 -- >>> testZip zipTree4
 
@@ -379,13 +380,14 @@ zipTree function using the above `do` notation for the `>>=` operator.
 -}
 
 zipTree5 :: Tree a -> Tree b -> Maybe (Tree (a, b))
-zipTree5 (Leaf a) (Leaf b) = return (Leaf (a, b))
-zipTree5 (Branch l r) (Branch l' r') = do
-  undefined
-zipTree5 _ _ = Nothing
+zipTree5 = go
+  where
+    go (Leaf a) (Leaf b) = return (Leaf (a, b))
+    go (Branch l r) (Branch l' r') = do
+      undefined
+    go _ _ = Nothing
 
 -- >>> testZip zipTree5
--- True
 
 {-
 Nice!
@@ -481,16 +483,18 @@ For `Maybe`, the `<*>` operation applies a function to an argument, provided
 that they are both defined.
 
 Here's how we could use these operations in `zipTree` :
+
 -}
 
 zipTree6 :: Tree a -> Tree b -> Maybe (Tree (a, b))
-zipTree6 (Leaf a) (Leaf b) = pure (Leaf (a, b))
-zipTree6 (Branch l r) (Branch l' r') =
-  pure Branch <*> zipTree6 l l' <*> zipTree6 r r'
-zipTree6 _ _ = Nothing
+zipTree6 = go
+  where
+    go (Leaf a) (Leaf b) = return (Leaf (a, b))
+    go (Branch l r) (Branch l' r') = do
+      pure Branch <*> go l l' <*> go r r'
+    go _ _ = Nothing
 
 -- >>> testZip zipTree6
--- True
 
 {-
 The `<*>` operator lets us "lift" the `Branch` data constructor to the
@@ -505,18 +509,19 @@ That gives us one more tweak:
 -}
 
 zipTree7 :: Tree a -> Tree b -> Maybe (Tree (a, b))
-zipTree7 (Leaf a) (Leaf b) = pure (Leaf (a, b))
-zipTree7 (Branch l r) (Branch l' r') =
-  Branch <$> zipTree7 l l' <*> zipTree7 r r'
-zipTree7 _ _ = Nothing
+zipTree7 = go
+  where
+    go (Leaf a) (Leaf b) = return (Leaf (a, b))
+    go (Branch l r) (Branch l' r') = do
+      Branch <$> go l l' <*> go r r'
+    go _ _ = Nothing
 
 {-
 Compare this version to our initial (unsafe) one. Making this code safe comes
 at very little cost.
 -}
 
--- >>> testZip zipTree6
--- True
+-- >>> testZip zipTree7
 
 {-
 Functors, Applicatives and Monads
@@ -582,6 +587,7 @@ should *not* be recursive.
 
 -- >>> pairs0 [1,2,3] [5,6,7]
 -- [(1,5),(1,6),(1,7),(2,5),(2,6),(2,7),(3,5),(3,6),(3,7)]
+
 pairs0 :: [a] -> [b] -> [(a, b)]
 pairs0 xs ys = undefined
 
@@ -636,6 +642,7 @@ Here's my version:
 
 -- >>> pairs1 [1,2,3] [5,6,7]
 -- [(1,5),(1,6),(1,7),(2,5),(2,6),(2,7),(3,5),(3,6),(3,7)]
+
 pairs1 :: [a] -> [b] -> [(a, b)]
 pairs1 xs ys =
   concat

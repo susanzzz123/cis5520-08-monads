@@ -1,6 +1,7 @@
 {-
 ---
 fulltitle: "In class exercise: The Either Monad"
+date:
 ---
 
 The goal of this short in-class exercise is to understand the `Either` monad, which is very similar to the `Maybe` monad.
@@ -29,7 +30,10 @@ with that of the `Maybe` datatype, which represents nothing or something.
 data Maybe b = Nothing | Just b
 ~~~~
 
-These two types are similar in their second data constructors. Both `Right` and `Just` carry values of type `b`. The real difference is in their first data constructor. In `Either`, `Left` can carry a value, but in `Maybe`, the `Nothing` data constructor stands alone.
+These two types are similar in their second data constructors. Both `Right`
+and `Just` carry values of type `b`. The real difference is in their first
+data constructor. In `Either`, `Left` can carry a value, but in `Maybe`, the
+`Nothing` data constructor stands alone.
 
 You saw in the [Monads](Monads.html) module that the `Maybe` datatype can be used
 to work with functions that may not always produce results. In doing so, the monadic
@@ -103,6 +107,7 @@ to be passed to the next computation, via `bind`.
 -}
 
 instance Monad (Either a) where
+  return :: a2 -> Either a1 a2
   return = undefined
   (>>=) = undefined
 
@@ -111,5 +116,7 @@ instance Monad (Either a) where
 -}
 
 instance Applicative (Either a) where
+  pure :: a2 -> Either a1 a2
   pure = return
+  (<*>) :: Either a1 (a2 -> b) -> Either a1 a2 -> Either a1 b
   (<*>) = ap
