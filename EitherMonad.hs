@@ -1,7 +1,7 @@
 {-
 ---
 fulltitle: "In class exercise: The Either Monad"
-date:
+date: October 23, 2024
 ---
 
 The goal of this short in-class exercise is to understand the `Either` monad, which is very similar to the `Maybe` monad.
@@ -58,7 +58,7 @@ zipTree5 (Branch l r) (Branch l' r') = do
   x <- zipTree5 l l'
   y <- zipTree5 r r'
   return (Branch x y)
-zipTree5 t1 t2 = Left $ "Tree mismatch, found " ++ show t1 ++ " and " ++ show t2
+zipTree5 t1 t2 = Left ("Tree mismatch, found " ++ show t1 ++ " and " ++ show t2)
 
 {-
 If you call this function with these two trees:
@@ -80,7 +80,6 @@ returns the message above.
 -}
 
 -- >>> zipTree5 t1 t2
--- Prelude.undefined
 
 {-
 But before you do that, take a
@@ -109,6 +108,7 @@ to be passed to the next computation, via `bind`.
 instance Monad (Either a) where
   return :: a2 -> Either a1 a2
   return = undefined
+  (>>=) :: Either a1 a2 -> (a2 -> Either a1 b) -> Either a1 b
   (>>=) = undefined
 
 {-

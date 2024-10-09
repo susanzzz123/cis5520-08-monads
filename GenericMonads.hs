@@ -1,13 +1,13 @@
 {-
 ---
 fulltitle: "In class exercise: General Monadic Functions"
-date:
+date: October 23, 2024
 ---
 -}
 
 module GenericMonads where
 
-import qualified Data.Char as Char
+import Data.Char qualified as Char
 import Test.HUnit
 import Prelude hiding (mapM, sequence)
 
@@ -39,7 +39,7 @@ Here is the first one as an example.
 Given the type signature:
 -}
 
-mapM :: Monad m => (a -> m b) -> [a] -> m [b]
+mapM :: (Monad m) => (a -> m b) -> [a] -> m [b]
 {-
 We implement it by recursion on the list argument.
 -}
@@ -78,18 +78,18 @@ the mapped function can return its value in some monad m.
 
 -- (b)
 
-foldM :: Monad m => (a -> b -> m a) -> a -> [b] -> m a
+foldM :: (Monad m) => (a -> b -> m a) -> a -> [b] -> m a
 foldM = error "foldM: unimplemented"
 
 -- (c)
 
-sequence :: Monad m => [m a] -> m [a]
+sequence :: (Monad m) => [m a] -> m [a]
 sequence = error "sequence: unimplemented"
 
 -- (d) This one is the Kleisli "fish operator"
 --
 
-(>=>) :: Monad m => (a -> m b) -> (b -> m c) -> a -> m c
+(>=>) :: (Monad m) => (a -> m b) -> (b -> m c) -> a -> m c
 (>=>) = error ">=>: unimplemented"
 
 -- (e)
@@ -129,16 +129,16 @@ has the same behavior on `List` and `Maybe` as the monadic versions above.
 -- NOTE: you will not be able to define all of these, but be sure to test the
 -- ones that you do
 
-mapA :: Applicative f => (a -> f b) -> [a] -> f [b]
+mapA :: (Applicative f) => (a -> f b) -> [a] -> f [b]
 mapA = undefined
 
-foldA :: forall f a b. Applicative f => (a -> b -> f a) -> a -> [b] -> f a
+foldA :: forall f a b. (Applicative f) => (a -> b -> f a) -> a -> [b] -> f a
 foldA = undefined
 
-sequenceA :: Applicative f => [f a] -> f [a]
+sequenceA :: (Applicative f) => [f a] -> f [a]
 sequenceA = undefined
 
-kleisliA :: Applicative f => (a -> f b) -> (b -> f c) -> a -> f c
+kleisliA :: (Applicative f) => (a -> f b) -> (b -> f c) -> a -> f c
 kleisliA = undefined
 
 joinA :: (Applicative f) => f (f a) -> f a

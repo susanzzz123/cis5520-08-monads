@@ -1,7 +1,6 @@
 {-
 ---
 fulltitle: "In class exercise: Practice with Maybe Monad"
-date:
 ---
 
 The goal of this short in-class exercise is to get a bit more practice with using the `Maybe` Monad.
@@ -9,10 +8,10 @@ The goal of this short in-class exercise is to get a bit more practice with usin
 
 module MaybePractice where
 
-import qualified Control.Monad as Monad
+import Control.Monad qualified as Monad
 import Data.Map (Map)
-import qualified Data.Map as Map
-import qualified Text.Read as Text
+import Data.Map qualified as Map
+import Text.Read qualified as Text
 
 {-
 Part 1

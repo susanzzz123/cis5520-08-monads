@@ -1,15 +1,15 @@
 {-
 ---
 fulltitle: The Maybe and List Monads
-date: October 23, 2023
+date: October 21, 2024
 ---
 -}
 
 module Monads where
 
 import Control.Monad (guard)
-import qualified Data.List as List
-import qualified Data.Maybe as Maybe
+import Data.List qualified as List
+import Data.Maybe qualified as Maybe
 import Prelude hiding ((>>))
 
 {-
@@ -161,7 +161,7 @@ Can you identify any patterns in the code?
 Looking closely for patterns
 ----------------------------
 
-*  We return a value in two places in this function.  See the lines
+\*  We return a value in two places in this function.  See the lines
    marked `(*)` below.
 
 ~~~~~~~~~{.haskell}
@@ -193,7 +193,7 @@ retrn :: a -> Maybe a
 retrn = Just
 
 {-
-* We also *use* a pattern in two cases in the code. In two cases, we
+\* We also *use* a pattern in two cases in the code. In two cases, we
   pattern match the result of a recursive call, and if it is successful,
   we use that successful result later on in the computation. See the
   parts marked `(*)` below.
@@ -423,7 +423,7 @@ capabilities...
 That brings us to a derived monad operator, called "sequence":
 -}
 
-(>>) :: Monad m => m a -> m b -> m b
+(>>) :: (Monad m) => m a -> m b -> m b
 m1 >> m2 = m1 >>= const m2
 
 {-
@@ -796,7 +796,7 @@ we use the `()` value.
 In fact, there is a formal connection between the `do` notation and
 the comprehension notation.  Both are simply different shorthands for
 repeated use of the `>>=` operator for lists.  Indeed, the language
-*Gofer*, one of the precursors to Haskell, permitted the comprehension
+\*Gofer*, one of the precursors to Haskell, permitted the comprehension
 notation to be used with *any* monad.  For simplicity, Haskell only
 allows comprehension to be used with lists.
 
@@ -805,7 +805,7 @@ other contexts.
 
 What are some other examples that can be written using list comprehension?
 
-* We can find out the smallest number colors that can color a few southern states so that
+\* We can find out the smallest number colors that can color a few southern states so that
   neighboring states are not the same color.
 
 Here are some colors
@@ -850,7 +850,7 @@ colorsNeeded = List.find (not . null . stateColors) cs
 Other examples
 --------------
 
-* Rewrite the `map` function using a list comprehension.
+\* Rewrite the `map` function using a list comprehension.
 -}
 
 -- >>> map' (+1) [1,2,3]
@@ -858,13 +858,13 @@ map' :: (a -> b) -> [a] -> [b]
 map' f xs = undefined
 
 {-
-* Create a list of all pairs where the first component is from the first list,
+\* Create a list of all pairs where the first component is from the first list,
   the second component is from the second list, and where the first component
   is strictly less than the second.
 -}
 
 -- >>> firstLess [1,2,3] [1,2,3]
-firstLess :: Ord a => [a] -> [a] -> [(a, a)]
+firstLess :: (Ord a) => [a] -> [a] -> [(a, a)]
 firstLess = undefined
 
 {-
@@ -874,11 +874,11 @@ Now rewrite `map'` and `firstLess` using do notation (don't forget `guard` above
 map1 :: (a -> b) -> [a] -> [b]
 map1 = undefined
 
-firstLess1 :: Ord a => [a] -> [a] -> [(a, a)]
+firstLess1 :: (Ord a) => [a] -> [a] -> [(a, a)]
 firstLess1 xs ys = undefined
 
 {-
-* Rewrite `filter`, using a guarded list comprehension.
+\* Rewrite `filter`, using a guarded list comprehension.
 -}
 
 filter' :: (a -> Bool) -> [a] -> [a]
