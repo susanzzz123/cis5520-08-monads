@@ -46,7 +46,22 @@ according to the examples below.
 -- Nothing
 
 parseWeather :: Map String String -> Maybe Weather
-parseWeather = undefined
+parseWeather m = do
+  day <- parseHelper m "day"
+  maxTemp <- parseHelper m "maxTemp"
+  minTemp <- parseHelper m "minTemp"
+  return (Weather {dayNumber = day, maxTemp = maxTemp, minTemp = minTemp})
+
+parseHelper :: Map String String -> String -> Maybe Int
+parseHelper m k = do
+  str <- Map.lookup k m
+  int <- Text.readMaybe str
+  return int
+
+-- using zap:
+-- Weather <$> (Map.lookup "day" m >>= Text.readMaybe)
+-- <*> (Map.lookup "maxTemp" m >>= Text.readMaybe)
+-- <*> (Map.lookup "minTemp" m >>= Text.readMaybe)
 
 {-
 Part 2
@@ -68,7 +83,10 @@ One can be defined using `(>>=)` from the `Maybe` monad, and one cannot. Which i
 -- >>> firstJust Nothing Nothing
 -- Nothing
 firstJust :: Maybe a -> Maybe a -> Maybe a
-firstJust = undefined
+firstJust x y =
+  case x of
+  Just a -> Just a
+  Nothing -> y
 
 -- | Ensure that both Maybes are 'Just' and retain the first one
 --
@@ -81,4 +99,8 @@ firstJust = undefined
 -- >>> sequenceFirst Nothing Nothing
 -- Nothing
 sequenceFirst :: Maybe a -> Maybe b -> Maybe a
-sequenceFirst = undefined
+sequenceFirst x y = do
+  a <- x
+  b <- y
+  return a
+  -- x >>= (\a -> y >>= \b -> return a)

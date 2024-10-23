@@ -9,7 +9,7 @@ module GenericMonads where
 
 import Data.Char qualified as Char
 import Test.HUnit
-import Prelude hiding (mapM, sequence)
+import Prelude hiding (sequenceA, mapM, sequence)
 
 {-
 Generic Monad Operations
@@ -79,28 +79,42 @@ the mapped function can return its value in some monad m.
 -- (b)
 
 foldM :: (Monad m) => (a -> b -> m a) -> a -> [b] -> m a
-foldM = error "foldM: unimplemented"
+foldM _ b [] = return b
+foldM f b (x : xs) = do
+  acc <- f b x
+  rest <- foldM f acc xs
+  return rest
 
 -- (c)
 
 sequence :: (Monad m) => [m a] -> m [a]
-sequence = error "sequence: unimplemented"
+sequence [] = return []
+sequence (x : xs) = do
+  a <- x
+  rest <- sequence xs
+  return (a : rest)
 
 -- (d) This one is the Kleisli "fish operator"
 --
 
 (>=>) :: (Monad m) => (a -> m b) -> (b -> m c) -> a -> m c
-(>=>) = error ">=>: unimplemented"
+(>=>) bs cs x = do
+  b <- bs x
+  cs b
 
 -- (e)
 
 join :: (Monad m) => m (m a) -> m a
-join = error "join: unimplemented"
+join x = do
+  y <- x
+  y
 
 -- (f) Define the 'liftM' function
 
 liftM :: (Monad m) => (a -> b) -> m a -> m b
-liftM = error "liftM: unimplemented"
+liftM f x = do
+  a <- x
+  return (f a)
 
 -- Thought question: Is the type of `liftM` similar to that of another
 -- function we've discussed recently?
@@ -108,7 +122,10 @@ liftM = error "liftM: unimplemented"
 -- (g) And its two-argument version ...
 
 liftM2 :: (Monad m) => (a -> b -> r) -> m a -> m b -> m r
-liftM2 = error "liftM2: unimplemented"
+liftM2 f x y = do
+  a <- x
+  b <- y
+  return (f a b)
 
 {-
 -------------------------------------------------------------------------
@@ -136,16 +153,20 @@ foldA :: forall f a b. (Applicative f) => (a -> b -> f a) -> a -> [b] -> f a
 foldA = undefined
 
 sequenceA :: (Applicative f) => [f a] -> f [a]
-sequenceA = undefined
+sequenceA [] = pure []
+sequenceA [x] = (:[]) <$> x
+sequenceA (x : xs) = (:) <$> x <*> sequenceA xs
+-- f a : f [a]
 
 kleisliA :: (Applicative f) => (a -> f b) -> (b -> f c) -> a -> f c
 kleisliA = undefined
 
 joinA :: (Applicative f) => f (f a) -> f a
 joinA = undefined
+-- bind f x = join (f <$> x)
 
 liftA :: (Applicative f) => (a -> b) -> f a -> f b
-liftA f x = undefined
+liftA f x = f <$> x
 
 liftA2 :: (Applicative f) => (a -> b -> r) -> f a -> f b -> f r
-liftA2 f x y = undefined
+liftA2 f x y = f <$> x <*> y
