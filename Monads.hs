@@ -28,7 +28,9 @@ in the tree.
 -}
 
 zipTree :: Tree a -> Tree b -> Tree (a, b)
-zipTree = undefined
+zipTree (Leaf a) (Leaf b) = Leaf (a, b)
+zipTree (Branch l r) (Branch l' r') = Branch (zipTree l l') (zipTree r r')
+zipTree _ _ = error "input trees are of different shapes"
 
 {-
         o                     o                      o
@@ -46,6 +48,7 @@ testZip0 =
     == Branch (Leaf ("a", 0)) (Branch (Leaf ("b", 1)) (Leaf ("c", 2)))
 
 -- >>> zipTree (Branch (Leaf "a") (Branch (Leaf "b") (Leaf "c"))) (Branch (Leaf 0) (Branch (Leaf 1) (Leaf 2)))
+-- Branch (Leaf ("a",0)) (Branch (Leaf ("b",1)) (Leaf ("c",2)))
 
 {-
 Keeping track of errors
@@ -63,7 +66,15 @@ Let's rewrite it so that the partiality is explicit in the type.
 -}
 
 zipTree1 :: Tree a -> Tree b -> Maybe (Tree (a, b))
-zipTree1 = undefined
+zipTree1 (Leaf a) (Leaf b) = Just (Leaf (a, b))
+zipTree1 (Branch l r) (Branch l' r') =
+  let left = zipTree1 l l'
+      right = zipTree1 r r' in
+  case (left, right) of
+    (Nothing, _) -> Nothing
+    (_, Nothing) -> Nothing
+    (Just x, Just y) -> Just (Branch x y)
+zipTree1 _ _ = Nothing
 
 {-
 This function is going to be our inspiration for the following development.
@@ -139,6 +150,7 @@ zipTree2 = go
     go _ _ = Nothing
 
 -- >>> testZip zipTree2
+-- True
 
 {-
 All that nested pattern matching! This version looks so much worse than the
@@ -271,6 +283,7 @@ zipTree3 = go
     go _ _ = Nothing
 
 -- >>> testZip zipTree3
+-- True
 
 {-
 Do the names `retrn` and `bind` sound familiar to you? Do their types look
@@ -336,6 +349,7 @@ zipTree4 = go
     go _ _ = Nothing
 
 -- >>> testZip zipTree4
+-- True
 
 {-
 What is the benefit to writing the code this way?
@@ -384,10 +398,13 @@ zipTree5 = go
   where
     go (Leaf a) (Leaf b) = return (Leaf (a, b))
     go (Branch l r) (Branch l' r') = do
-      undefined
+      left <- go l l'
+      right <- go r r'
+      return (Branch left right)
     go _ _ = Nothing
 
 -- >>> testZip zipTree5
+-- True
 
 {-
 Nice!
@@ -495,6 +512,7 @@ zipTree6 = go
     go _ _ = Nothing
 
 -- >>> testZip zipTree6
+-- True
 
 {-
 The `<*>` operator lets us "lift" the `Branch` data constructor to the
@@ -522,6 +540,7 @@ at very little cost.
 -}
 
 -- >>> testZip zipTree7
+-- True
 
 {-
 Functors, Applicatives and Monads
@@ -540,13 +559,14 @@ right. )
 -}
 
 fmapMonad :: (Monad m) => (a -> b) -> m a -> m b
-fmapMonad = undefined
+fmapMonad f m1 = m1 >>= (\x -> return (f x))
 
 pureMonad :: (Monad m) => a -> m a
-pureMonad = undefined
+pureMonad = return
 
 zapMonad :: (Monad m) => m (a -> b) -> m a -> m b
-zapMonad = undefined
+zapMonad f a =
+  f >>= (\f' -> a >>= (\x -> return (f' x)))
 
 {-
 Note that `fmapMonad` is called `liftM` and `zapMonad` is called `ap` in the
@@ -589,7 +609,7 @@ should *not* be recursive.
 -- [(1,5),(1,6),(1,7),(2,5),(2,6),(2,7),(3,5),(3,6),(3,7)]
 
 pairs0 :: [a] -> [b] -> [(a, b)]
-pairs0 xs ys = undefined
+pairs0 xs ys = foldr (\x acc -> map (\y -> (x, y)) ys ++ acc) [] xs
 
 testPairs :: ([Int] -> [Int] -> [(Int, Int)]) -> Bool
 testPairs ps =
@@ -716,7 +736,10 @@ Rewrite `pairs` using `>>=` and return
 -- >>> pairs2 [1,2,3] [5,6,7]
 -- [(1,5),(1,6),(1,7),(2,5),(2,6),(2,7),(3,5),(3,6),(3,7)]
 pairs2 :: [a] -> [b] -> [(a, b)]
-pairs2 xs ys = undefined
+pairs2 xs ys =
+  xs >>= (\x ->
+    ys >>= \y -> [(x, y)]
+  )
 
 {-
 Rewrite again using do notation
@@ -725,7 +748,10 @@ Rewrite again using do notation
 -- >>> pairs3 [1,2,3] [5,6,7]
 -- [(1,5),(1,6),(1,7),(2,5),(2,6),(2,7),(3,5),(3,6),(3,7)]
 pairs3 :: [a] -> [b] -> [(a, b)]
-pairs3 xs ys = undefined
+pairs3 xs ys = do
+  x <- xs
+  y <- ys
+  [(x, y)]
 
 {-
 Make sure that it still works.
@@ -737,6 +763,12 @@ testPairs2 = testPairs pairs2
 testPairs3 :: Bool
 testPairs3 = testPairs pairs3
 
+-- >>> testPairs2
+-- True
+
+-- >>> testPairs3
+-- True
+
 {-
 List comprehensions
 -------------------
@@ -746,6 +778,7 @@ defined using list comprehension notation:
 -}
 
 -- >>> pairs4 [1,2,3] [1,2,3]
+-- [(1,1),(1,2),(1,3),(2,1),(2,2),(2,3),(3,1),(3,2),(3,3)]
 pairs4 :: [Int] -> [Int] -> [(Int, Int)]
 pairs4 xs ys = [(x, y) | x <- xs, y <- ys]
 
@@ -759,6 +792,7 @@ filter out some of the results
 -}
 
 -- >>> pairs5 [1,2,3] [1,2,3]
+-- [(1,2),(1,3),(2,1),(2,3),(3,1),(3,2)]
 pairs5 :: [Int] -> [Int] -> [(Int, Int)]
 pairs5 xs ys = [(x, y) | x <- xs, y <- ys, x /= y]
 
@@ -779,6 +813,7 @@ guard function:
 -}
 
 -- >>> pairs5' [1,2,3] [1,2,3]
+-- [(1,2),(1,3),(2,1),(2,3),(3,1),(3,2)]
 pairs5' :: [Int] -> [Int] -> [(Int, Int)]
 pairs5' xs ys = do
   x <- xs
@@ -840,6 +875,7 @@ And this code finds the smallest list of colors that can do so:
 -}
 
 -- >>> colorsNeeded
+-- Just [Red,Green,Blue]
 colorsNeeded :: Maybe [Color]
 colorsNeeded = List.find (not . null . stateColors) cs
   where
@@ -855,7 +891,8 @@ Other examples
 
 -- >>> map' (+1) [1,2,3]
 map' :: (a -> b) -> [a] -> [b]
-map' f xs = undefined
+map' f xs = [f x | x <- xs]
+-- map' f xs = concatMap (\x -> [f x]) xs
 
 {-
 \* Create a list of all pairs where the first component is from the first list,
@@ -864,25 +901,32 @@ map' f xs = undefined
 -}
 
 -- >>> firstLess [1,2,3] [1,2,3]
+-- [(1,2),(1,3),(2,3)]
 firstLess :: (Ord a) => [a] -> [a] -> [(a, a)]
-firstLess = undefined
+firstLess xs ys = [(x, y) | x <- xs, y <- ys, x < y]
 
 {-
 Now rewrite `map'` and `firstLess` using do notation (don't forget `guard` above)
 -}
 
 map1 :: (a -> b) -> [a] -> [b]
-map1 = undefined
+map1 f xs = do
+  x <- xs
+  return (f x)
 
 firstLess1 :: (Ord a) => [a] -> [a] -> [(a, a)]
-firstLess1 xs ys = undefined
+firstLess1 xs ys = do
+  x <- xs
+  y <- ys
+  guard (x < y)
+  return (x, y)
 
 {-
 \* Rewrite `filter`, using a guarded list comprehension.
 -}
 
 filter' :: (a -> Bool) -> [a] -> [a]
-filter' f xs = undefined
+filter' f xs = [x | x <- xs, f x]
 
 {-
 The List Applicative
@@ -906,8 +950,11 @@ at the definition above to see what could makes sense.
 -}
 
 -- >>> pairs6 [1,2,3] [1,2,3]
+-- [(1,1),(1,2),(1,3),(2,1),(2,2),(2,3),(3,1),(3,2),(3,3)]
 pairs6 :: [a] -> [b] -> [(a, b)]
-pairs6 xs ys = undefined
+pairs6 xs ys =
+  [f' y | f' <- [f x | f <- [(,)], x <- xs],  y <- ys]
+  -- pure (,) <*> xs <*> ys
 
 {-
 Once you get `pairs6`, try inlining the definitions of `pure` and `<*>` to see
